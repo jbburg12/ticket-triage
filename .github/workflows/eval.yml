@@ -1,0 +1,52 @@
+name: eval
+
+# Runs the eval suite against the real API and fails the build if a gate fails.
+# - Automatically on PRs that change prompts, code or data, with the day-to-day model (Haiku).
+# - Manually ("Run workflow" in the Actions tab) for any model, such as the Opus comparison.
+on:
+  pull_request:
+    paths: ["prompts/**", "src/**", "data/**"]
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Model to triage with
+        type: choice
+        options: [claude-haiku-5-5, claude-opus-5-5]
+        default: claude-haiku-5-5
+      repeats:
+        description: Times to run the dataset
+        default: "1"
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Optional: traces CI runs too. Tracing is skipped when these are empty.
+      LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+      LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+      LANGFUSE_BASE_URL: ${{ secrets.LANGFUSE_BASE_URL }}
+      LANGFUSE_TRACING_ENVIRONMENT: ci
+      # Inputs go through env vars, never straight into the shell command.
+      MODEL: ${{ inputs.model || 'claude-haiku-5-5' }}
+      REPEATS: ${{ inputs.repeats || '1' }}
+    steps:
+      # PRs from forks don't get secrets: skip with a notice instead of failing.
+      - name: Check for API key
+        if: env.ANTHROPIC_API_KEY == ''
+        run: echo "::notice::ANTHROPIC_API_KEY is not available (fork PR?). Skipping the eval."
+      - uses: actions/checkout@v4
+        if: env.ANTHROPIC_API_KEY != ''
+      - uses: astral-sh/setup-uv@v6
+        if: env.ANTHROPIC_API_KEY != ''
+      - name: Run eval
+        if: env.ANTHROPIC_API_KEY != ''
+        run: |
+          uv sync --locked
+          uv run triage eval --gate --model "$MODEL" --repeats "$REPEATS"
+      - name: Upload results
+        if: always() && env.ANTHROPIC_API_KEY != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: results/latest.*

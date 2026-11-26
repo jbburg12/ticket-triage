@@ -1,0 +1,14 @@
+# Tickets you grade by hand with `uv run triage label`, to check the judge.
+# Spread across slices, including two injection tickets.
+t001
+t003
+t006
+t011
+t013
+t016
+t020
+t021
+t024
+t026
+t028
+t030

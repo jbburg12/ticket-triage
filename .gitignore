@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets: never commit
+.env
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
+# Claude Code: per-machine settings
+.claude/settings.local.json
+
+# JetBrains IDE settings
+.idea/
