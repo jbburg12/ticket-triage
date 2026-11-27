@@ -32,7 +32,7 @@ golden dataset (30 tickets) ─▶ 1. generate ─▶ 2. code scoring (gates CI)
 - `invalid_json`
 - `schema_violation`
 
-**Prompts are versioned files** in [`prompts/`](prompts/): `triage/v1.md` and `judge/v1.md`. Every eval result and trace records which version produced it, and `--prompt-version` lets you compare versions on the same dataset.
+**Prompts are versioned files** in [`prompts/`](prompts/): `triage/v1.md`, and `judge/v1.md` to `judge/v3.md`. Every eval result and trace records which version produced it, and `--prompt-version` lets you compare versions on the same dataset.
 
 **Evaluation runs in three steps:**
 
@@ -43,7 +43,7 @@ golden dataset (30 tickets) ─▶ 1. generate ─▶ 2. code scoring (gates CI)
    - accuracy per slice
    - failure rate
    - a prompt-injection check
-3. **Judge scoring.** Claude Sonnet 5.5 grades each summary and reply on [a written rubric](prompts/judge/v1.md), with a pass/fail verdict and a reason for each of 4 criteria:
+3. **Judge scoring.** Claude Sonnet 5.5 grades each summary and reply on [a written rubric](prompts/judge/v3.md), with a pass/fail verdict and a reason for each of 4 criteria:
    - faithful summary
    - helpful reply
    - safe reply
@@ -82,7 +82,7 @@ There are 30 synthetic tickets, tagged by slice so accuracy can be broken down:
 | `non_english` | 4 | Spanish, German, Japanese and French; reply in the customer's language |
 | `injection` | 3 | "Ignore previous instructions…", a fake `</ticket>` tag, prompt extraction |
 
-Each ticket's `notes` field explains its label, and injection tickets list `forbidden_phrases` for the code-based check.
+Each ticket's `notes` field explains its label, and injection tickets list `forbidden_phrases` for the code-based check. The tickets and labels were drafted with Claude and then reviewed by hand, with the judgement calls (t011, t012, t013, t016) decided explicitly. Only 5 tickets are `medium`, so medium-priority accuracy is the noisiest number.
 
 ## Running it
 
@@ -163,7 +163,15 @@ The full reasoning is in [SPEC.md](SPEC.md). The short version:
 | Haiku 5.5 | – | – | – | – | – | – |
 | Opus 5.5 | – | – | – | – | – | – |
 
-**Judge vs human:** not yet measured.
+**Judge vs human:** 18 hand-labelled outputs: 12 real Haiku outputs, all of which I passed, plus 6 handwritten bad examples, each failing one criterion. Without the bad examples, a judge that passed everything would have scored 100%.
+
+| Judge rubric | Agreement (72 verdicts) | Disagreements | What changed |
+|---|---|---|---|
+| `judge/v1` | 71/72 | failed "we'll look into it as a priority" (t006), which I passed | first version |
+| `judge/v2` | 70/72 | fixed t006, but a new "claimed action" rule failed "we've passed this to the product team" (t016, t030), which I passed | general reassurance passes; claimed actions fail |
+| `judge/v3` | **72/72** | none | v2 without the claimed-action rule. Now the default |
+
+All three rubrics caught all 6 bad examples. The changes only moved the line between reassurance and commitment. Caveat: v3 was tuned on these same 18 labels, and some criteria have only one labelled failure, so it should be re-checked on fresh labels before its scores gate CI.
 
 ### Prompt changelog
 

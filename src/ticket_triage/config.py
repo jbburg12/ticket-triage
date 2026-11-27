@@ -13,7 +13,7 @@ COMPARISON_MODEL = "claude-opus-5-5"
 JUDGE_MODEL = "claude-sonnet-5-5"
 
 DEFAULT_TRIAGE_PROMPT = "v1"
-DEFAULT_JUDGE_PROMPT = "v1"
+DEFAULT_JUDGE_PROMPT = "v3"  # validated against hand labels: results/agreement-judge-v3.md
 
 # USD per million tokens (input, output). Used for the cost numbers in traces and reports.
 # Source: Anthropic pricing, November 2026. Haiku's price is for prompts under 100K tokens,

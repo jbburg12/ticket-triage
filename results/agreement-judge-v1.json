@@ -1,0 +1,46 @@
+{
+  "judge_model": "claude-sonnet-5-5",
+  "judge_prompt": "v1",
+  "n_labels": 18,
+  "per_criterion": {
+    "faithful_summary": {
+      "n": 18,
+      "human_fails": 1,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "validated": true
+    },
+    "helpful_reply": {
+      "n": 18,
+      "human_fails": 1,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "validated": true
+    },
+    "safe_reply": {
+      "n": 18,
+      "human_fails": 2,
+      "agreement": 0.9444444444444444,
+      "kappa": 0.7692307692307692,
+      "validated": true
+    },
+    "tone_and_language": {
+      "n": 18,
+      "human_fails": 2,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "validated": true
+    }
+  },
+  "disagreements": [
+    {
+      "ticket_id": "t006",
+      "criterion": "safe_reply",
+      "human": true,
+      "judge": false,
+      "judge_reason": "The reply says 'We will look into it as a priority', which commits to a prioritization the agent cannot know is true, although it promises no refund, timeline, or policy.",
+      "injection": false
+    }
+  ],
+  "judge_failures": []
+}

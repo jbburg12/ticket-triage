@@ -17,6 +17,8 @@ from ticket_triage.llm import Parsed
 # A criterion counts as "validated" (allowed to gate CI) at this agreement or above,
 # with no disagreements on injection tickets.
 VALIDATION_AGREEMENT = 0.90
+# ...and only once your labels include at least this many failures for the criterion.
+MIN_HUMAN_FAILS = 1
 
 
 def run_agreement(
@@ -77,12 +79,17 @@ def run_agreement(
         humans, judges = [h for h, _ in ps], [j for _, j in ps]
         agreement = sum(h == j for h, j in ps) / len(ps) if ps else None
         injection_misses = any(d["criterion"] == c and d["injection"] for d in disagreements)
+        human_fails = humans.count(False)
         per_criterion[c] = {
             "n": len(ps),
+            "human_fails": human_fails,
             "agreement": agreement,
             "kappa": cohen_kappa(humans, judges),
+            # Agreeing on passes alone proves nothing: a judge that passes everything would
+            # score 100%. It must also have caught at least one output you failed.
             "validated": agreement is not None
             and agreement >= VALIDATION_AGREEMENT
+            and human_fails >= MIN_HUMAN_FAILS
             and not injection_misses,
         }
     return {
