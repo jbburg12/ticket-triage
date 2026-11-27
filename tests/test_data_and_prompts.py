@@ -40,7 +40,8 @@ def test_prompts_load_with_metadata():
     assert not triage.text.startswith("---")
 
 
-def test_judge_prompt_names_every_criterion():
-    text = load_prompt("judge", "v1").text
-    for criterion in CRITERIA:
-        assert f"## {criterion}" in text
+def test_every_judge_prompt_names_every_criterion():
+    for version in ("v1", "v2", "v3"):
+        text = load_prompt("judge", version).text
+        for criterion in CRITERIA:
+            assert f"## {criterion}" in text, (version, criterion)

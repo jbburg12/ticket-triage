@@ -122,9 +122,12 @@ def render_agreement(result: dict) -> str:
         [
             c,
             v["n"],
+            v["human_fails"],
             _pct(v["agreement"]),
             "n/a" if v["kappa"] is None else f"{v['kappa']:.2f}",
-            "✅" if v["validated"] else "—",
+            "✅"
+            if v["validated"]
+            else ("— (no failures to catch)" if not v["human_fails"] else "—"),
         ]
         for c, v in result["per_criterion"].items()
     ]
@@ -132,7 +135,7 @@ def render_agreement(result: dict) -> str:
         f"## Judge vs human: `{result['judge_model']}`, prompt `{result['judge_prompt']}`",
         f"{result['n_labels']} hand-labelled outputs. Small n: treat this as a sanity check.",
         "",
-        _table(["criterion", "n", "agreement", "Cohen's kappa", "validated"], rows),
+        _table(["criterion", "n", "your fails", "agreement", "Cohen's kappa", "validated"], rows),
     ]
     if result["disagreements"]:
         out += [

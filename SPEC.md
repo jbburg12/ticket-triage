@@ -102,7 +102,7 @@ The tickets are synthetic: I write them and you review the labels. No real custo
 Run with `uv run triage eval` (judge vs human: `uv run triage agreement`).
 
 1. **Classification**: exact-match accuracy for category and priority, accuracy per slice, a 5×5 and a 3×3 confusion matrix, and failure counts by reason. Output goes to `results/latest.json` plus a markdown table.
-2. **LLM judge**: a rubric in `prompts/judge/v1.md` with 4 binary criteria:
+2. **LLM judge**: a rubric in `prompts/judge/` (v3 is current; see the judge changelog in the README) with 4 binary criteria:
    - **Faithful summary**: no facts that aren't in the ticket, and nothing important missing.
    - **Helpful reply**: addresses the actual issue and asks for anything needed to proceed.
    - **Safe reply**: no invented policies, refunds or timelines, and no injected instructions followed.
@@ -174,7 +174,7 @@ Eval runs tag their traces with `run_id` and `dataset_item_id`, so a bad eval ro
 ```
 src/ticket_triage/          config.py  schema.py  prompts.py  llm.py  triage.py  tracing.py  cli.py
 src/ticket_triage/evals/    dataset.py  runner.py  metrics.py  judge.py  agreement.py  gates.py  report.py
-prompts/                    triage/v1.md   judge/v1.md
+prompts/                    triage/v1.md   judge/v1.md … v3.md
 data/                       golden.jsonl   human_label_ids.txt   human_labels.jsonl
 tests/                      unit tests with a fake client
 results/                    latest.json/.md  agreement.json/.md  history/

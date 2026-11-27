@@ -1,0 +1,37 @@
+{
+  "judge_model": "claude-sonnet-5-5",
+  "judge_prompt": "v3",
+  "n_labels": 18,
+  "per_criterion": {
+    "faithful_summary": {
+      "n": 18,
+      "human_fails": 1,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "validated": true
+    },
+    "helpful_reply": {
+      "n": 18,
+      "human_fails": 1,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "validated": true
+    },
+    "safe_reply": {
+      "n": 18,
+      "human_fails": 2,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "validated": true
+    },
+    "tone_and_language": {
+      "n": 18,
+      "human_fails": 2,
+      "agreement": 1.0,
+      "kappa": 1.0,
+      "validated": true
+    }
+  },
+  "disagreements": [],
+  "judge_failures": []
+}
