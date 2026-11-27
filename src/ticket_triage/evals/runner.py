@@ -30,12 +30,15 @@ def run_eval(
     repeats: int = 1,
     workers: int = 4,
     tickets: list[GoldenTicket] | None = None,
+    dataset: str = "golden",
     client: anthropic.Anthropic | None = None,
 ) -> dict:
     tickets = tickets if tickets is not None else load_golden()
     client = client or anthropic.Anthropic()
     started = datetime.now(UTC)
     run_id = f"{started:%Y%m%dT%H%M%SZ}-{model}-{prompt_version}"
+    if dataset != "golden":  # keep other datasets' results apart from the golden history
+        run_id += f"-{dataset}"
 
     def evaluate(job: tuple[int, GoldenTicket]) -> dict:
         repeat, ticket = job
@@ -49,6 +52,7 @@ def run_eval(
             session_id=run_id,
             metadata={
                 "run_id": run_id,
+                "dataset": dataset,
                 "dataset_item_id": ticket.id,
                 "repeat": repeat,
                 "slices": ",".join(ticket.tags),
@@ -68,6 +72,7 @@ def run_eval(
         rows,
         tickets,
         run_id=run_id,
+        dataset=dataset,
         timestamp=started.isoformat(timespec="seconds"),
         model=model,
         prompt_version=prompt_version,
@@ -168,6 +173,7 @@ def summarize(rows: list[dict], tickets: list[GoldenTicket], **info) -> dict:
             "failure_rate": metrics.failure_rate(rows),
         },
         "failures": metrics.failure_counts(rows),
+        "non_english_summaries": metrics.non_english_summaries(rows),
         "confusion": {
             "category": metrics.confusion_matrix(rows, "category"),
             "priority": metrics.confusion_matrix(rows, "priority"),

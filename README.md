@@ -69,6 +69,12 @@ golden dataset (30 tickets) ─▶ 1. generate ─▶ 2. code scoring (gates CI)
 
 Priority follows the impact described, not the customer's tone. A ticket with several issues gets the category of the issue that drives the highest priority.
 
+Rules for the borderline cases, settled while reviewing the golden and held-out labels (and written into `triage/v3`):
+- **Problem, not cause.** A customer who can't sign in has a `login` problem, even if they blame a payment or an update.
+- **Locked out is `high`** even when a recovery route exists but fails, for example a reset email that never arrives. Login friction that still lets you in is `medium`.
+- **Wrong data or behaviour is at least `medium`**, however easy the workaround. Appearance-only problems are `low`.
+- **A feature that never existed is a `feature_request`**, however it's phrased ("why can't I…?"). It's a `bug` only if the feature exists and misbehaves.
+
 ### The golden dataset
 
 There are 30 synthetic tickets, tagged by slice so accuracy can be broken down:
@@ -114,11 +120,12 @@ The costs are estimates; the eval report shows the measured ones. API usage is b
 
 - [`test.yml`](.github/workflows/test.yml) runs lint and the unit tests on every push. It needs no secrets.
 - [`eval.yml`](.github/workflows/eval.yml) runs `triage eval --gate` with Haiku on PRs that touch prompts, code or data. The build fails if any of these gates fails:
-  - category accuracy < 0.85
-  - priority accuracy < 0.70
-  - failure rate > 5%
+  - category accuracy < 0.90 (4+ misses out of 30)
+  - priority accuracy < 0.87 (5+ misses)
+  - failure rate > 5% (2+ failed triages)
   - any injection ticket fails the code-based check
-- The thresholds are starting values in [`gates.py`](src/ticket_triage/evals/gates.py), to be reset after the first baseline run.
+  - any summary isn't in English (the regression `triage/v2` got away with)
+- The thresholds are in [`gates.py`](src/ticket_triage/evals/gates.py). They're set from `triage/v3`'s worst golden run minus a margin of about one ticket: tight enough to catch a real regression, loose enough not to fail on run-to-run noise. They need re-deriving whenever the default prompt, model or golden set changes.
 - The Opus comparison is a manual "Run workflow" with a model choice.
 - To enable the eval job, add `ANTHROPIC_API_KEY` as a repository secret. Optionally add `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_BASE_URL` to trace CI runs. Fork PRs skip the eval with a notice.
 
@@ -160,7 +167,8 @@ The full reasoning is in [SPEC.md](SPEC.md). The short version:
 
 | Model | Category acc. | Priority acc. | Failure rate | Judge pass (faithful / helpful / safe / tone) | Cost per 1k tickets | p50 latency |
 |---|---|---|---|---|---|---|
-| Haiku 5.5 | – | – | – | – | – | – |
+| Haiku 5.5 (`triage/v3`), held-out set | **94.7%** | **86.7%** | 1.3% | – | $0.28 | 1.9s |
+| Haiku 5.5 (`triage/v3`), golden set | 98.9% | 100% | 0% | 100% / 100% / 100% / 100% | $0.28 | 1.9s |
 | Opus 5.5 | – | – | – | – | – | – |
 
 **Judge vs human:** 18 hand-labelled outputs: 12 real Haiku outputs, all of which I passed, plus 6 handwritten bad examples, each failing one criterion. Without the bad examples, a judge that passed everything would have scored 100%.
@@ -175,9 +183,44 @@ All three rubrics caught all 6 bad examples. The changes only moved the line bet
 
 ### Prompt changelog
 
-| Version | Change | Category acc. | Priority acc. |
+Each row pools several runs of the 30 golden tickets with Haiku 5.5. One run moves by about one ticket (3.3 points) on its own, so only differences bigger than that count.
+
+| Version | Change | Runs | Category acc. | Priority acc. | Failures | Non-English summaries |
+|---|---|---|---|---|---|---|
+| `triage/v1` | First version | 4 | 95.0% | 91.7% | 2/120 | 0 |
+| `triage/v2` | Lockouts are high even when recovery fails; categorise by problem, not suspected cause; wrong output with a workaround is medium; short multi-issue summaries; never ask for codes | 3 | 93.3% | 94.4% | 2/90 | **8** |
+| `triage/v3` | v2, with the summary explicitly internal and always English, and "can't do X" about a feature that never existed counted as a feature request | 3 | **98.9%** | **100%** | **0/90** | 0 |
+
+**v2 is the lesson.** It fixed the four tickets it targeted, but it introduced two regressions:
+- **Summaries in the customer's language.** Spanish, French and Japanese every run. Accuracy couldn't show it, and two Japanese summaries also failed validation by running to two sentences. The eval now checks summary language in code.
+- **t022 became `bug/medium`.** "You STILL can't import a CSV" got read as a broken feature, because of v2's new medium rule.
+
+**Judge scores** (judge `v3`, one run each): v1 and v3 both pass 100% on all four criteria. The prompt changes didn't hurt reply quality, but the judge is at its ceiling on this dataset, so it can't tell the two apart.
+
+### Held-out check
+
+v2 and v3 were written by looking at misses on the golden set, so their golden scores are flattering. To check them, I wrote a separate [held-out set](data/holdout.jsonl) of 25 tickets after v3 was final and labelled them before running anything:
+- 15 hard cases I drafted
+- 5 clear ones
+- 4 messy ones written by hand: vague, typos, sarcasm, confusion
+- 1 polite ticket about a likely account takeover
+
+Each prompt ran 3 times on it (`triage eval --dataset data/holdout.jsonl`):
+
+| Version | Category acc. | Priority acc. | Failures |
 |---|---|---|---|
-| `triage/v1` | First version | – | – |
+| `triage/v1` | 90.7% | 70.7% | 4/75 |
+| `triage/v3` | **94.7%** | **86.7%** | 1/75 |
+
+- **The improvement is real.** Priority went up 16 points on tickets that played no part in tuning, far beyond the run-to-run noise of about 4 points on 25 tickets.
+- **v3 is weaker than its golden score suggests,** 86.7% vs 100% on priority. Part of that gap is a harder set, and part is fitting to the golden tickets. The held-out numbers are the honest ones.
+- **Remaining weaknesses:**
+  - login friction rated `low` instead of `medium` (h03)
+  - data loss rated `medium` once (h14)
+  - an over-long summary for a three-issue ticket (h11)
+- **h24 got worse.** It's a confused ticket that v3 reads as a lockout and v1 read as billing. Its label is genuinely ambiguous.
+
+These tickets have now been seen. Before the next prompt change, they should join the golden set and a fresh held-out set should be written.
 
 ## What I learned / known failure modes
 

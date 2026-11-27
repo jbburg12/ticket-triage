@@ -8,6 +8,7 @@ import pytest
 from conftest import GOOD_OUTPUT, FakeClient, fake_response
 
 from ticket_triage import tracing
+from ticket_triage.config import DEFAULT_TRIAGE_PROMPT
 from ticket_triage.evals.dataset import GoldenTicket
 from ticket_triage.evals.judge import CRITERIA
 from ticket_triage.evals.runner import run_eval
@@ -89,7 +90,7 @@ def test_eval_traces_one_tree_per_ticket_with_scores(fake_langfuse):
         ("classify-ticket", "generation", root),
         ("judge-output", "generation", root),
     ]
-    assert triage_gen.created["version"] == "triage/v1"
+    assert triage_gen.created["version"] == f"triage/{DEFAULT_TRIAGE_PROMPT}"
     assert triage_gen.created["input"][0]["role"] == "system"
     assert triage_gen.created["model_parameters"] == {"effort": "low", "max_tokens": 4000}
     assert triage_gen.updates["usage_details"] == {"input": 1000, "output": 200}

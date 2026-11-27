@@ -25,7 +25,8 @@ def render_eval(summary: dict, gates: list[Gate]) -> str:
     m = summary["metrics"]
     out = [
         f"## Eval: `{summary['model']}`, prompt `{summary['prompt_version']}`",
-        f"{summary['n_tickets']} tickets × {summary['repeats']} repeat(s) · "
+        f"{summary['n_tickets']} tickets from `{summary.get('dataset', 'golden')}` × "
+        f"{summary['repeats']} repeat(s) · "
         f"judge: `{summary['judge_model'] or 'off'}` · run `{summary['run_id']}`",
         "",
         "### Gates (scored by code)",
@@ -54,6 +55,8 @@ def render_eval(summary: dict, gates: list[Gate]) -> str:
     ]
     if summary["failures"]:
         out += ["", "Failures: " + ", ".join(f"{k} ×{v}" for k, v in summary["failures"].items())]
+    if bad := summary.get("non_english_summaries"):
+        out += ["", f"Summaries not in English: {len(bad)} ({', '.join(bad)})"]
     out += [
         "",
         "#### Category confusion matrix",

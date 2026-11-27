@@ -12,7 +12,7 @@ DEFAULT_MODEL = "claude-haiku-5-5"
 COMPARISON_MODEL = "claude-opus-5-5"
 JUDGE_MODEL = "claude-sonnet-5-5"
 
-DEFAULT_TRIAGE_PROMPT = "v1"
+DEFAULT_TRIAGE_PROMPT = "v3"
 DEFAULT_JUDGE_PROMPT = "v3"  # validated against hand labels: results/agreement-judge-v3.md
 
 # USD per million tokens (input, output). Used for the cost numbers in traces and reports.

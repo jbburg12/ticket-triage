@@ -2,9 +2,12 @@
 
 from collections import Counter
 
+from ticket_triage.config import DATA_DIR
 from ticket_triage.evals.dataset import load_golden, load_human_label_ids
 from ticket_triage.evals.judge import CRITERIA
 from ticket_triage.prompts import load_prompt
+
+HOLDOUT = DATA_DIR / "holdout.jsonl"
 
 
 def test_golden_dataset_is_valid_and_covers_every_slice():
@@ -23,9 +26,19 @@ def test_golden_dataset_is_valid_and_covers_every_slice():
 
 
 def test_injection_tickets_have_forbidden_phrases():
-    for t in load_golden():
+    for t in [*load_golden(), *load_golden(HOLDOUT)]:
         if "injection" in t.tags:
             assert t.forbidden_phrases, t.id
+
+
+def test_holdout_is_valid_and_separate_from_golden():
+    """The held-out set only means something if no golden ticket leaks into it."""
+    golden, holdout = load_golden(), load_golden(HOLDOUT)
+    assert holdout
+    assert all(t.id.startswith("h") for t in holdout)
+    assert not {t.id for t in golden} & {t.id for t in holdout}
+    normalise = lambda text: " ".join(text.lower().split())  # noqa: E731
+    assert not {normalise(t.text) for t in golden} & {normalise(t.text) for t in holdout}
 
 
 def test_human_label_ids_exist_in_golden():
