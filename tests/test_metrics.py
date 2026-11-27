@@ -112,4 +112,22 @@ def test_gates_pass_and_fail():
     rows = [row() for _ in range(8)] + [row(failure="refusal")] * 2
     bad = summarize(rows, tickets=[None] * 10, **info)
     failed = {g.name for g in check_gates(bad) if not g.passed}
-    assert failed == {"category accuracy", "failure rate"}
+    assert failed == {"category accuracy", "priority accuracy", "failure rate"}
+
+
+def test_summary_language_gate():
+    info = dict(
+        run_id="r",
+        timestamp="t",
+        model="m",
+        prompt_version="v2",
+        judge_model=None,
+        judge_prompt=None,
+        repeats=1,
+    )
+    rows = [row() for _ in range(10)]
+    rows[0]["predicted"]["summary"] = "El cliente indica que se le cobró dos veces este mes."
+    gates = {g.name: g for g in check_gates(summarize(rows, tickets=[None] * 10, **info))}
+    assert not gates["summaries in English"].passed
+    assert gates["summaries in English"].actual == "1 not English"
+    assert gates["category accuracy"].passed  # accuracy alone would have missed it

@@ -118,12 +118,13 @@ Run with `uv run triage eval` (judge vs human: `uv run triage agreement`).
 - **`test.yml`** runs on every push and PR: `uv sync`, `ruff`, `pytest tests/`. No secrets, no API calls.
 - **`eval.yml`** runs on PRs that touch `prompts/`, `src/` or `data/`, plus manual dispatch. It runs the eval with `ANTHROPIC_API_KEY` from repo secrets and posts the markdown results table to the job summary.
 - **The build fails if:**
-  - category accuracy < **0.85**
-  - priority accuracy < **0.70**
+  - category accuracy < **0.90**
+  - priority accuracy < **0.87**
   - failure rate > **5%**
   - any injection ticket fails the code-based injection check (below)
+  - any summary isn't in English
 
-  These are starting values (see Q3).
+  **(changed during build)** The starting values were 0.85 and 0.70. They were reset from `triage/v3`'s worst golden run minus a margin of about one ticket. The English-summary gate was added after `triage/v2` broke the English-summary rule while accuracy stayed high.
 - **Only checks code can verify fail the build.** The eval uses AI to *generate* outputs (Haiku triages the tickets), but every gate above is *scored* by plain Python against the dataset labels. The judge's scores are reported and don't fail the build until the judge has been validated.
 
   | Check | Calls AI? | Fails the build? |

@@ -120,11 +120,12 @@ The costs are estimates; the eval report shows the measured ones. API usage is b
 
 - [`test.yml`](.github/workflows/test.yml) runs lint and the unit tests on every push. It needs no secrets.
 - [`eval.yml`](.github/workflows/eval.yml) runs `triage eval --gate` with Haiku on PRs that touch prompts, code or data. The build fails if any of these gates fails:
-  - category accuracy < 0.85
-  - priority accuracy < 0.70
-  - failure rate > 5%
+  - category accuracy < 0.90 (4+ misses out of 30)
+  - priority accuracy < 0.87 (5+ misses)
+  - failure rate > 5% (2+ failed triages)
   - any injection ticket fails the code-based check
-- The thresholds are starting values in [`gates.py`](src/ticket_triage/evals/gates.py), to be reset after the first baseline run.
+  - any summary isn't in English (the regression `triage/v2` got away with)
+- The thresholds are in [`gates.py`](src/ticket_triage/evals/gates.py). They're set from `triage/v3`'s worst golden run minus a margin of about one ticket: tight enough to catch a real regression, loose enough not to fail on run-to-run noise. They need re-deriving whenever the default prompt, model or golden set changes.
 - The Opus comparison is a manual "Run workflow" with a model choice.
 - To enable the eval job, add `ANTHROPIC_API_KEY` as a repository secret. Optionally add `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_BASE_URL` to trace CI runs. Fork PRs skip the eval with a notice.
 
