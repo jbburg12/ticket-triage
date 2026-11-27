@@ -18,6 +18,7 @@ from ticket_triage.config import (
     JUDGE_MODEL,
     RESULTS_DIR,
 )
+from ticket_triage.evals.dataset import GOLDEN_PATH
 from ticket_triage.schema import TriageFailure
 
 app = typer.Typer(
@@ -78,9 +79,19 @@ def eval_(
     gate: Annotated[bool, typer.Option(help="Exit 1 if any CI gate fails.")] = False,
     save_history: Annotated[bool, typer.Option(help="Also save to results/history/.")] = False,
     workers: Annotated[int, typer.Option(min=1, help="Parallel requests.")] = 4,
+    dataset: Annotated[
+        Path,
+        typer.Option(
+            exists=True,
+            dir_okay=False,
+            help="Tickets to evaluate. Default: the golden set. Use data/holdout.jsonl "
+            "only to confirm a finished prompt; never tune against it.",
+        ),
+    ] = GOLDEN_PATH,
 ) -> None:
-    """Run the eval suite on the golden dataset."""
+    """Run the eval suite on the golden dataset (or another one with --dataset)."""
     _require_api_key()
+    from ticket_triage.evals.dataset import load_golden
     from ticket_triage.evals.gates import check_gates
     from ticket_triage.evals.report import render_eval
     from ticket_triage.evals.runner import run_eval
@@ -93,6 +104,8 @@ def eval_(
         judge_prompt=judge_prompt,
         repeats=repeats,
         workers=workers,
+        tickets=load_golden(dataset),
+        dataset=dataset.stem,
     )
     tracing.flush()
     gates = check_gates(summary)

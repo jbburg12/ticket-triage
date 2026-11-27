@@ -5,6 +5,24 @@ from ticket_triage.evals.gates import check_gates
 from ticket_triage.evals.runner import summarize
 
 
+@pytest.mark.parametrize(
+    ("summary", "english"),
+    [
+        ("The customer asks how to cancel their subscription.", True),
+        (
+            "PDF export shows umlauts as question marks; browser printing works as a workaround.",
+            True,
+        ),
+        ("El cliente indica que se le cobró dos veces la suscripción de este mes.", False),
+        ("Le client demande l'ajout d'une synchronisation avec Google Agenda.", False),
+        ("Der PDF-Export zeigt Umlaute als Fragezeichen an.", False),
+        ("顧客はパスワードを忘れてリセットを試みたが、メールが届かない。", False),
+    ],
+)
+def test_summary_is_english(summary, english):
+    assert metrics.summary_is_english(summary) is english
+
+
 def row(
     expected=("billing", "high"),
     predicted=("billing", "high"),
@@ -21,7 +39,12 @@ def row(
         "expected": {"category": expected[0], "priority": expected[1]},
         "predicted": {}
         if failure
-        else {"category": predicted[0], "priority": predicted[1], "suggested_reply": reply},
+        else {
+            "category": predicted[0],
+            "priority": predicted[1],
+            "summary": "The customer was charged twice for the same month.",
+            "suggested_reply": reply,
+        },
         "failure": failure,
         "stats": None,
     }

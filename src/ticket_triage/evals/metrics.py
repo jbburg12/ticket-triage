@@ -4,6 +4,7 @@ A "row" is one ticket's eval record (see runner.py). A failed triage counts as w
 every metric, so failures can't make the scores look better by dropping hard tickets.
 """
 
+import re
 from collections import Counter, defaultdict
 from statistics import median
 
@@ -44,6 +45,33 @@ def accuracy_by_tag(rows: list[dict]) -> dict[str, dict[str, float]]:
         }
         for tag, group in sorted(groups.items())
     }
+
+
+# Common English words that Spanish, French, German and Japanese summaries don't contain.
+# Short words that also exist in those languages ("a", "en", "die") are left out on purpose.
+_ENGLISH_MARKERS = frozenset(
+    "the and of is are was that with their they has have for to about but which from "
+    "on in as an it its not can cannot does asks reports says".split()
+)
+
+
+def summary_is_english(summary: str) -> bool:
+    """Heuristic: an English summary uses at least two common English words.
+
+    The prompt says summaries are always in English; nothing else checks it. Checked against
+    every stored summary when it was added: it caught all non-English ones, flagged no English.
+    """
+    words = re.findall(r"[a-z']+", summary.lower())
+    return sum(w in _ENGLISH_MARKERS for w in words) >= 2
+
+
+def non_english_summaries(rows: list[dict]) -> list[str]:
+    """Ids of successful triages whose summary isn't in English (failed ones count elsewhere)."""
+    return [
+        r["id"]
+        for r in rows
+        if not r["failure"] and not summary_is_english(r["predicted"]["summary"])
+    ]
 
 
 def failure_counts(rows: list[dict]) -> dict[str, int]:

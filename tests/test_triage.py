@@ -7,6 +7,7 @@ import httpx2
 import pytest
 from conftest import GOOD_OUTPUT, FakeClient, fake_response
 
+from ticket_triage.config import DEFAULT_TRIAGE_PROMPT
 from ticket_triage.schema import TriageFailure, TriageSuccess
 from ticket_triage.triage import triage, wrap_ticket
 
@@ -17,7 +18,7 @@ def test_valid_response_is_parsed(good_text):
 
     assert isinstance(outcome, TriageSuccess)
     assert outcome.result.category == "billing"
-    assert outcome.prompt_version == "triage/v1"
+    assert outcome.prompt_version == f"triage/{DEFAULT_TRIAGE_PROMPT}"
     assert outcome.stats.input_tokens == 1000
     assert outcome.stats.cost_usd == pytest.approx((1000 * 0.10 + 200 * 0.50) / 1e6)
 
