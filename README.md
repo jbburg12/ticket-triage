@@ -169,7 +169,22 @@ The full reasoning is in [SPEC.md](SPEC.md). The short version:
 |---|---|---|---|---|---|---|
 | Haiku 5.5 (`triage/v3`), held-out set | **94.7%** | **86.7%** | 1.3% | – | $0.28 | 1.9s |
 | Haiku 5.5 (`triage/v3`), golden set | 98.9% | 100% | 0% | 100% / 100% / 100% / 100% | $0.28 | 1.9s |
-| Opus 5.5 | – | – | – | – | – | – |
+| Opus 5.5 (`triage/v3`), held-out set | **100%** | **100%** | 0% | – | $12.21 | 3.1s |
+| Opus 5.5 (`triage/v3`), golden set | 100% | 100% | 0% | 100% / 100% / 100% / 100% | $11.95 | 2.9s |
+
+Accuracy pools 3 runs per set; judge scores come from one run on the golden set. Same prompt, datasets and judge for both models, so only the triage model differs.
+
+**Haiku vs Opus.**
+- **Accuracy:** on the held-out set, Opus got every ticket right in every run. Haiku missed:
+  - login friction (h03)
+  - data loss rated `medium` once (h14)
+  - a too-long three-issue summary (h11)
+  - the vague "can't do anything" ticket (h21)
+  - the confused "supposed to be free?" ticket (h24)
+- **Cost:** about 43× more per ticket: $12 vs $0.28 per 1,000 tickets, or about 1.2¢ vs 0.03¢ each.
+- **Speed:** about 1.2 seconds slower.
+- **Reply quality:** both pass the judge 100%, so the extra spend buys classification accuracy, not better replies.
+- **Which to ship** depends on what a misrouted ticket costs. At 10,000 tickets a month, that's $3 vs $120. One urgent ticket left in a low-priority queue probably costs more than the difference. A cheaper middle ground worth testing is a cascade: Haiku for every ticket, with only low-confidence or high-stakes tickets sent to Opus.
 
 **Judge vs human:** 18 hand-labelled outputs: 12 real Haiku outputs, all of which I passed, plus 6 handwritten bad examples, each failing one criterion. Without the bad examples, a judge that passed everything would have scored 100%.
 
@@ -224,4 +239,69 @@ These tickets have now been seen. Before the next prompt change, they should joi
 
 ## What I learned / known failure modes
 
-*To be written from real eval runs.*
+### What I learned
+
+#### The golden set is a working set, not a benchmark
+
+The 30-ticket golden set is what I iterate against. I study its misses, CI gates every PR on it, and its slices (angry, non-English, injection) show where the system is weak. Once a prompt has been tuned against it, its score stops being an honest estimate of performance on new tickets. That isn't a flaw. It's the reason a separate held-out set exists.
+
+- **It only works if both the labels and the set are fixed.** Every label is a reviewed decision. The borderline rules are written down ("categorise by the problem, not its suspected cause"), so labels stay consistent as the set grows. Labels change only when I decide a label was wrong, never to match the model.
+- **Fixed answers where they exist, a rubric where they don't.** Category and priority are scored by exact match in code. Summaries and replies have many acceptable versions, so a judge grades those.
+- **Accuracy can hide a regression.** `triage/v2` fixed the four problems I targeted and kept accuracy high, but it started writing summaries in the customer's language on every non-English ticket. Nothing measured that, so the scores showed nothing. Every written requirement now has a code check, and summary language is a CI gate. Re-scoring the stored runs confirms it would have blocked v2.
+- **One run is roughly ±1 ticket of noise.** With no temperature setting, outputs vary between runs. Repeating runs separated systematic misses (t026: wrong in 4 of 4 runs) from coin flips (t005 and t025 moving between `low` and `medium`). I only act on differences clearly larger than that noise, and the CI thresholds leave the same margin. They catch real regressions without failing at random.
+- **Growing it safely.** The plan is to merge the held-out tickets into a versioned golden v2:
+  - each ticket tagged with where it came from
+  - added as a whole batch, never hand-picked
+  - with genuinely ambiguous tickets left out
+
+  Scores are only compared within the same version of the dataset.
+
+#### The held-out set gives the honest number
+
+v2 and v3 were written by studying v1's misses on the golden set. A better golden score after that can't tell "the rules generalise" apart from "the rules fit these 30 tickets". So I built a 25-ticket held-out set after v3 was final, labelled it before running anything, and ran it once.
+
+| `triage/v3` priority accuracy | Golden set (tuned on) | Held-out set (unseen) |
+|---|---|---|
+| Haiku 5.5 | 100% | **86.7%** |
+
+- **The improvement was real:** +16 points over v1 on tickets that played no part in tuning, far beyond the noise.
+- **The golden number was about 13 points too optimistic.** Without the held-out set, I'd have reported it.
+- **Size it for the difference you want to detect.** At 10 tickets, each ticket is worth 10 points, and the v1-vs-v3 gap would have been under one ticket. So I used 25, weighted toward the hard cases where the versions were expected to differ.
+- **Vary who writes it.** The tickets I wrote with deliberately messy, realistic phrasing (vague, misspelled, sarcastic) were among the hardest for the model and to label. Synthetic data written by the person who writes the prompt shares that person's blind spots.
+- **Using it spends it.** Once its misses inform a change, it's part of tuning. The next prompt version needs a fresh one.
+
+#### An LLM judge has to be calibrated against a human
+
+The judge (Claude Sonnet 5.5) grades each summary and reply on four pass/fail criteria, giving a reason before each verdict. Binary criteria keep its verdicts comparable with mine and make agreement measurable. The judge only measures; it never changes the output.
+
+I graded outputs by hand and measured agreement with `triage agreement`. Calibration took three rubric versions:
+
+| Judge rubric | Agreement with my grades (72 verdicts) | What I learned |
+|---|---|---|
+| `judge/v1` | 71/72 | Stricter than me: it failed "we'll look into it as a priority" |
+| `judge/v2` | 70/72 | My new rule failed routine replies I'd send. The rubric must encode the grader's standards, not assumptions |
+| `judge/v3` | **72/72** | Reassurance and routine routing pass; promised refunds, dates or features fail |
+
+- **Agreement on passes alone proves nothing.** All 12 real outputs passed, and a judge that passes everything would also have scored 100%. I added six deliberately broken outputs, each failing exactly one criterion. A criterion now counts as validated only after the judge has caught a failure I graded.
+- **Known limit:** v3 was calibrated on the same 18 labels it's measured on, and the judge is at its ceiling on this dataset. Both Haiku and Opus pass 100%, so it can't yet tell good replies from better ones. Fresh labels and harder cases come before its scores gate CI.
+- **Cost shapes where it runs.** A judge call costs about 20× a triage call, and it's about 95% of an eval run's cost. So comparisons run without it, and in production it would grade a sample of live traffic in Langfuse, not every ticket. Agents' corrections to category or reply would be the cheaper, label-quality signal.
+
+#### Model choice is a cost decision the eval makes visible
+
+Opus 5.5 got every held-out ticket right (100% category and priority), against Haiku's 94.7% and 86.7%. It costs about 43× more ($12 vs $0.28 per 1,000 tickets) and is 1.2 seconds slower. Both pass the judge 100%, so the extra spend buys classification accuracy, not better replies. Whether that's worth it depends on what a misrouted ticket costs, and a Haiku-first cascade that escalates uncertain tickets to Opus is the obvious thing to test next.
+
+### Known failure modes (Haiku 5.5, `triage/v3`, held-out set)
+
+- **Login friction rated `low`** instead of `medium`, for example having to log in again on every tab (h03, 2 of 3 runs).
+- **Data loss occasionally rated `medium`** when the ticket is also angry or not in English (h14, 1 of 3).
+- **Summaries for tickets with three or more issues** sometimes exceed 200 characters and fail validation (h11, 1 of 3).
+- **Vague or confused tickets** get a confident answer that may not match the label, for example "can't do anything" or "I thought this was supposed to be free?" (h21, h24). These are genuinely ambiguous: Opus matched my labels, Haiku didn't.
+- **The judge is at its ceiling.** Both models pass 100% on this dataset, so it can't currently tell a good reply from a better one. It needs harder cases.
+
+### What I'd do next
+
+1. **Grow the golden set.** Move the 25 held-out tickets into the golden set (a versioned golden v2, with each ticket tagged by where it came from), then write a fresh held-out set before any more prompt changes.
+2. **Write `triage/v4`** for the failure modes above, and confirm it on the new held-out set.
+3. **Try a cascade:** Haiku for every ticket, with uncertain or high-stakes ones sent to Opus. That needs a confidence signal first.
+4. **Re-check the judge on fresh hand labels**, including harder replies, before its scores can fail the build.
+5. **Production monitoring:** in production there are no labels, so the signals would be the judge running on a sample of live traces in Langfuse, plus agents' corrections to the category and the reply, recorded as scores.
