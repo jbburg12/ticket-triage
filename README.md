@@ -113,6 +113,7 @@ Then fill in `.env`. You need an `ANTHROPIC_API_KEY` for anything that calls the
 | `uv run triage eval --model claude-opus-5-5 --repeats 3` | The model comparison run | about $3 |
 | `uv run triage label` | Grade the 12 outputs by hand (resumable) | < $0.01 |
 | `uv run triage agreement` | Judge vs your labels | a few cents |
+| `uv run python -m ticket_triage.ui` | Web UI at http://127.0.0.1:8000: a playground for single tickets, and a browser for saved eval runs | browsing free; each triage < $0.01 |
 
 The costs are estimates; the eval report shows the measured ones. API usage is billed separately from Claude subscription plans, so set a spend limit in the Claude Console.
 

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ticket-triage</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">ticket-triage</div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-view="playground" aria-selected="true">Playground</button>
+      <button role="tab" data-view="results" aria-selected="false">Eval results</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Playground: triage one ticket -->
+    <section id="view-playground" class="view">
+      <div class="playground">
+        <form id="triage-form" class="panel">
+          <div class="field-row">
+            <label>Model
+              <select id="model"></select>
+            </label>
+            <label>Prompt
+              <select id="prompt"></select>
+            </label>
+            <label class="grow">Load an example
+              <select id="example"><option value="">Golden tickets…</option></select>
+            </label>
+          </div>
+          <label for="ticket" class="sr-only">Ticket text</label>
+          <textarea id="ticket" rows="10" placeholder="Paste a support ticket…" required></textarea>
+          <div class="form-foot">
+            <span id="expected" class="muted"></span>
+            <span class="muted kbd-hint">Ctrl+Enter</span>
+            <button type="submit" id="submit" class="primary">Triage</button>
+          </div>
+        </form>
+
+        <div id="outcome" class="panel outcome empty">
+          <p class="muted">The result appears here: category, priority, a one-sentence summary and a suggested first reply.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results: browse saved eval runs -->
+    <section id="view-results" class="view" hidden>
+      <div class="run-picker">
+        <label>Run <select id="run"></select></label>
+        <span id="run-meta" class="muted"></span>
+      </div>
+      <div id="run-body"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

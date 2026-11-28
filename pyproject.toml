@@ -5,11 +5,13 @@ description = "Triage customer support tickets with an LLM, plus an evaluation s
 requires-python = ">=3.12"
 dependencies = [
     "anthropic>=2.14.0",
+    "fastapi>=0.165.0",
     "langfuse>=5.2.0",
     "pydantic>=2.14.4",
     "python-dotenv>=1.2.4",
     "truststore>=0.10.5",
     "typer>=0.29.2",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
@@ -21,6 +23,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "pytest>=9.2.0",
     "ruff>=0.17.6",
 ]

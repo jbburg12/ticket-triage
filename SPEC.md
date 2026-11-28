@@ -6,7 +6,7 @@ Status: **approved and built** · 2026-11-25. Changes made during the build are 
 
 A small Python library and CLI that turns a customer support ticket into structured JSON, and, more importantly, an evaluation setup that shows whether it works and catches regressions. It's a learning project and a portfolio piece: readable code comes before features.
 
-Out of scope: a web UI, ticket-system integrations, multi-turn conversations, retrieval/RAG, fine-tuning.
+Out of scope: ticket-system integrations, multi-turn conversations, retrieval/RAG, fine-tuning. (Changed after the build: a local web UI was added in `src/ticket_triage/ui/`, a playground and an eval-results browser over the same library code.)
 
 ## 2. What it does
 
