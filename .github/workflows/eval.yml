@@ -1,11 +1,26 @@
 name: eval
 
 # Runs the eval suite against the real API and fails the build if a gate fails.
-# - Automatically on PRs that change prompts, code or data, with the day-to-day model (Haiku).
+# - Automatically on PRs that could change eval results, with the day-to-day model (Haiku).
 # - Manually ("Run workflow" in the Actions tab) for any model, such as the Opus comparison.
 on:
   pull_request:
-    paths: ["prompts/**", "src/**", "data/**"]
+    # Only what can change the gated eval's result. Anything else (a UI, docs, tracing)
+    # skips it and costs nothing; the free unit tests in test.yml still run on every push.
+    # When adding a module that the triage or eval path imports, add it here.
+    paths:
+      - "prompts/**" # triage and judge prompts
+      - "data/golden.jsonl" # the gated dataset
+      - "src/ticket_triage/triage.py" # the feature
+      - "src/ticket_triage/llm.py" # the API call and validation
+      - "src/ticket_triage/schema.py" # output schema and its rules
+      - "src/ticket_triage/prompts.py" # prompt loading
+      - "src/ticket_triage/config.py" # default models and prompt versions
+      - "src/ticket_triage/cli.py" # `triage eval`, which CI runs
+      - "src/ticket_triage/evals/**" # scoring, judge, gates
+      - "pyproject.toml" # dependencies, such as the Anthropic SDK version
+      - "uv.lock"
+      - ".github/workflows/eval.yml" # this workflow
   workflow_dispatch:
     inputs:
       model:
