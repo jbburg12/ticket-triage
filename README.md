@@ -119,7 +119,14 @@ The costs are estimates; the eval report shows the measured ones. API usage is b
 ### CI
 
 - [`test.yml`](.github/workflows/test.yml) runs lint and the unit tests on every push. It needs no secrets.
-- [`eval.yml`](.github/workflows/eval.yml) runs `triage eval --gate` with Haiku on PRs that touch prompts, code or data. The build fails if any of these gates fails:
+- [`eval.yml`](.github/workflows/eval.yml) runs `triage eval --gate` with Haiku on PRs that could change eval results. It triggers on:
+  - prompts
+  - the golden set
+  - the triage and eval code
+  - dependencies
+  - the workflow itself
+
+  Unrelated changes, like a UI or docs, skip it, and when that code is added, its folder stays off the list. The build fails if any of these gates fails:
   - category accuracy < 0.90 (4+ misses out of 30)
   - priority accuracy < 0.87 (5+ misses)
   - failure rate > 5% (2+ failed triages)
