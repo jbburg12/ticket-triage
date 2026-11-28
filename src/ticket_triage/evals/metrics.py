@@ -51,15 +51,20 @@ def accuracy_by_tag(rows: list[dict]) -> dict[str, dict[str, float]]:
 # Short words that also exist in those languages ("a", "en", "die") are left out on purpose.
 _ENGLISH_MARKERS = frozenset(
     "the and of is are was that with their they has have for to about but which from "
-    "on in as an it its not can cannot does asks reports says".split()
+    "on in as an it its not can cannot does asks reports says "
+    # Added after Opus's terse, subject-first summaries ("Left sidebar icons appear a few
+    # pixels misaligned in Firefox, though...") were flagged with only one marker word.
+    "though although while after before since when because by at or only still all "
+    "appear appears work works customer customers user users".split()
 )
 
 
 def summary_is_english(summary: str) -> bool:
     """Heuristic: an English summary uses at least two common English words.
 
-    The prompt says summaries are always in English; nothing else checks it. Checked against
-    every stored summary when it was added: it caught all non-English ones, flagged no English.
+    The prompt says summaries are always in English; nothing else checks it. Last checked
+    against all 696 stored summaries (Haiku and Opus): it caught all 8 non-English ones and
+    flagged no English ones.
     """
     words = re.findall(r"[a-z']+", summary.lower())
     return sum(w in _ENGLISH_MARKERS for w in words) >= 2

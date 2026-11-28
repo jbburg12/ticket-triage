@@ -13,6 +13,11 @@ from ticket_triage.evals.runner import summarize
             "PDF export shows umlauts as question marks; browser printing works as a workaround.",
             True,
         ),
+        (
+            "Left sidebar icons appear a few pixels misaligned in Firefox, "
+            "though all functionality works correctly.",
+            True,
+        ),
         ("El cliente indica que se le cobró dos veces la suscripción de este mes.", False),
         ("Le client demande l'ajout d'une synchronisation avec Google Agenda.", False),
         ("Der PDF-Export zeigt Umlaute als Fragezeichen an.", False),

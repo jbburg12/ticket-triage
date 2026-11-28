@@ -1,65 +1,59 @@
-## Eval: `claude-haiku-5-5`, prompt `v3`
-25 tickets from `holdout` × 3 repeat(s) · judge: `off` · run `20261127T182035Z-claude-haiku-5-5-v3-holdout`
+## Eval: `claude-opus-5-5`, prompt `v3`
+30 tickets from `golden` × 1 repeat(s) · judge: `claude-sonnet-5-5` · run `20261127T194204Z-claude-opus-5-5-v3`
 
 ### Gates (scored by code)
 | gate | actual | required |  |
 |---|---|---|---|
-| category accuracy | 0.95 | >= 0.85 | ✅ |
-| priority accuracy | 0.87 | >= 0.70 | ✅ |
-| failure rate | 0.01 | <= 0.05 | ✅ |
+| category accuracy | 1.00 | >= 0.90 | ✅ |
+| priority accuracy | 1.00 | >= 0.87 | ✅ |
+| failure rate | 0.00 | <= 0.05 | ✅ |
 | injection check | 3/3 | all pass | ✅ |
+| summaries in English | all | all | ✅ |
 
 ### Classification
 | metric | value | range across repeats |
 |---|---|---|
-| category accuracy | 95% | 92% – 96% |
-| priority accuracy | 87% | 84% – 88% |
-| failure rate | 1% |  |
-
-Failures: schema_violation ×1
+| category accuracy | 100% | 100% – 100% |
+| priority accuracy | 100% | 100% – 100% |
+| failure rate | 0% |  |
 
 #### Category confusion matrix
 | expected \ predicted | billing | login | bug | feature_request | other | (failed) |
 |---|---|---|---|---|---|---|
-| billing | 11 | 3 | · | · | · | 1 |
-| login | · | 21 | · | · | · | · |
-| bug | · | · | 21 | · | · | · |
-| feature_request | · | · | · | 9 | · | · |
-| other | · | · | · | · | 9 | · |
+| billing | 6 | · | · | · | · | · |
+| login | · | 7 | · | · | · | · |
+| bug | · | · | 8 | · | · | · |
+| feature_request | · | · | · | 6 | · | · |
+| other | · | · | · | · | 3 | · |
 
 #### Priority confusion matrix
 | expected \ predicted | low | medium | high | (failed) |
 |---|---|---|---|---|
-| low | 24 | · | · | · |
-| medium | 2 | 10 | 3 | · |
-| high | · | 4 | 31 | 1 |
+| low | 13 | · | · | · |
+| medium | · | 5 | · | · |
+| high | · | · | 12 | · |
 
 #### Accuracy by slice
 | tag | n | category | priority |
 |---|---|---|---|
-| ambiguous | 24 | 88% | 67% |
-| angry | 3 | 100% | 67% |
-| clear | 33 | 100% | 100% |
-| es | 3 | 100% | 67% |
+| ambiguous | 5 | 100% | 100% |
+| angry | 4 | 100% | 100% |
+| clear | 10 | 100% | 100% |
+| de | 1 | 100% | 100% |
+| es | 1 | 100% | 100% |
+| fr | 1 | 100% | 100% |
 | injection | 3 | 100% | 100% |
-| it | 3 | 100% | 100% |
-| multi_issue | 6 | 83% | 83% |
-| non_english | 9 | 100% | 89% |
-| pt | 3 | 100% | 100% |
+| ja | 1 | 100% | 100% |
+| multi_issue | 4 | 100% | 100% |
+| non_english | 4 | 100% | 100% |
+
+### Judge pass rates (reported, not gating)
+| criterion | pass rate |
+|---|---|
+| faithful_summary | 100% |
+| helpful_reply | 100% |
+| safe_reply | 100% |
+| tone_and_language | 100% |
 
 ### Cost and latency
-Triage $0.0207 · judge $0.0000 · triage per 1k tickets ≈ $0.28 · p50 triage latency 1.8s
-
-### Misses
-| ticket | expected | got |
-|---|---|---|
-| h14 | bug/high | bug/medium |
-| h21 | other/high | other/medium |
-| h24 | billing/medium | login/high |
-| h03 | login/medium | login/low |
-| h11 | billing/high | (failed) schema_violation |
-| h21 | other/high | other/medium |
-| h24 | billing/medium | login/high |
-| h03 | login/medium | login/low |
-| h21 | other/high | other/medium |
-| h24 | billing/medium | login/high |
+Triage $0.3564 · judge $0.1828 · triage per 1k tickets ≈ $11.88 · p50 triage latency 3.2s
